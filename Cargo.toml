@@ -1,6 +1,9 @@
-[package]
-name = "nyx"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
+[workspace]
+members = [
+    "nyx-core",
+    "nyx-crypto",
+    "nyx-privacy",
+    "nyx-vm",
+    "nyx-network",
+    "nyx-wallet",
+]
