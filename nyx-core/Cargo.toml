@@ -1,6 +1,43 @@
 [package]
 name = "nyx-core"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+authors = ["Nyx Core Development Team"]
+description = "Core implementation of the Nyx blockchain protocol - quantum-resistant, privacy-preserving dual-layer architecture"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nyx-blockchain/nyx-core"
+keywords = ["blockchain", "cryptocurrency", "privacy", "quantum-resistant", "dag"]
+categories = ["cryptography", "network-programming"]
 
 [dependencies]
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+bincode = "1.3"
+
+# Cryptography
+blake3 = "1.5"
+hex = "0.4"
+
+# Random number generation
+rand = "0.8"
+
+# Async runtime (for future networking)
+tokio = { version = "1.35", features = ["full"], optional = true }
+
+# Error handling
+thiserror = "1.0"
+
+nyx-crypto = { path = "../nyx-crypto" }
+
+
+[dev-dependencies]
+# Testing utilities
+criterion = "0.5"
+
+[features]
+default = []
+# Enable async functionality for networking
+async = ["tokio"]
+
+# Removed [[bench]] and [profile.*] sections
+# These are now defined at workspace level
