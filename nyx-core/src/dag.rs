@@ -288,17 +288,19 @@ mod tests {
             vec![TxInput {
                 prev_tx: [nonce; 32],
                 index: 0,
-                key_image: [0u8; 32],
+                key_image: [nonce; 32],
                 ring_indices: vec![],
             }],
             vec![TxOutput {
                 stealth_address: vec![nonce],
                 amount_commitment: vec![],
                 range_proof: vec![],
+                ephemeral_pubkey: vec![],
             }],
             RingSignature {
-                signature_data: vec![nonce],
-                ring_size: 16,
+                ring_members: vec![vec![1], vec![2]],
+                signature: vec![nonce],
+                key_image: [0u8; 32],
             },
             vec![nonce],
             parent1,

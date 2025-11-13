@@ -38,9 +38,10 @@ use rand::Rng;
 /// # Example
 /// ```
 /// use nyx_crypto::stealth::generate_stealth_address;
+/// use nyx_crypto::keys::generate_keypair_ed25519;
 ///
-/// let view_pub = vec![1u8; 32];
-/// let spend_pub = vec![2u8; 32];
+/// let (_, view_pub) = generate_keypair_ed25519();
+/// let (_, spend_pub) = generate_keypair_ed25519();
 /// let random = vec![3u8; 32];
 ///
 /// let (stealth_addr, ephemeral_pub) = generate_stealth_address(
@@ -117,10 +118,10 @@ pub fn generate_stealth_address(
 /// # Example
 /// ```
 /// use nyx_crypto::stealth::{generate_stealth_address, derive_shared_secret};
+/// use nyx_crypto::keys::generate_keypair_ed25519;
 ///
-/// let view_priv = vec![1u8; 32];
-/// let view_pub = vec![2u8; 32];
-/// let spend_pub = vec![3u8; 32];
+/// let (view_priv, view_pub) = generate_keypair_ed25519();
+/// let (_, spend_pub) = generate_keypair_ed25519();
 ///
 /// let (stealth, ephemeral) = generate_stealth_address(&view_pub, &spend_pub, &[4u8; 32]).unwrap();
 /// let secret = derive_shared_secret(&view_priv, &ephemeral).unwrap();
@@ -211,14 +212,7 @@ fn hash_to_scalar(data: &[u8]) -> [u8; 32] {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn generate_keypair_ed25519() -> (Vec<u8>, Vec<u8>) {
-        let mut rng = rand::thread_rng();
-        let private: [u8; 32] = rng.gen();
-        let scalar = Scalar::from_bytes_mod_order(hash_to_scalar(&private));
-        let public = (&scalar * ED25519_BASEPOINT_TABLE).compress().to_bytes().to_vec();
-        (private.to_vec(), public)
-    }
+    use crate::keys::generate_keypair_ed25519;
 
     #[test]
     fn test_generate_stealth_address() {
@@ -271,7 +265,7 @@ mod tests {
 
     #[test]
     fn test_is_not_mine() {
-        let (view_priv1, view_pub1) = generate_keypair_ed25519();
+        let (_view_priv1, view_pub1) = generate_keypair_ed25519();
         let (_, spend_pub1) = generate_keypair_ed25519();
 
         let (view_priv2, _) = generate_keypair_ed25519();

@@ -1,7 +1,7 @@
 // src/transaction.rs
 
-use crate::types::{Hash, Timestamp, hash_bytes_to_hash};
-use nyx_crypto::{ring, keys};  // Import crypto types
+use crate::types::{Hash, Timestamp};
+use nyx_crypto::ring;  // Import crypto types
 use serde::{Deserialize, Serialize};
 
 /// Transaction input referencing a previous output
