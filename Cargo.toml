@@ -7,3 +7,36 @@ members = [
     "nyx-network",
     "nyx-wallet",
 ]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Nyx Core Development Team"]
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+# Shared dependencies across workspace
+serde = { version = "1.0", features = ["derive"] }
+bincode = "1.3"
+blake3 = "1.5"
+rand = "0.8"
+thiserror = "1.0"
+hex = "0.4"
+libp2p = { version = "0.53", features = ["tcp", "dns", "identify", "noise", "yamux"] }
+
+
+# Profiles at workspace level
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[profile.dev]
+opt-level = 0
+
+[profile.test]
+opt-level = 1
+
+[profile.bench]
+inherits = "release"
