@@ -13,6 +13,10 @@ use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
 use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, ZeroizeOnDrop};
+use curve25519_dalek::{
+    scalar::Scalar,
+    constants::ED25519_BASEPOINT_TABLE,
+};
 
 /// Post-quantum keypair (mock Dilithium-3)
 ///
@@ -108,6 +112,14 @@ fn generate_keypair_with_rng<R: Rng>(rng: &mut R) -> KeyPair {
         public_key,
         private_key_inner: PrivateKey { data: private_data },
     }
+}
+
+pub fn generate_keypair_ed25519() -> (Vec<u8>, Vec<u8>) {
+    let mut rng = rand::thread_rng();
+    let private: [u8; 32] = rng.gen();
+    let scalar = Scalar::from_bytes_mod_order(blake3_hash(&private));
+    let public = (&scalar * ED25519_BASEPOINT_TABLE).compress().to_bytes().to_vec();
+    (private.to_vec(), public)
 }
 
 /// Signs data with a private key

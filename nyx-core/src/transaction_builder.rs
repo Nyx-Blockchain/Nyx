@@ -153,19 +153,21 @@ mod tests {
 
     #[test]
     fn test_transaction_builder() {
-        let keypair = keys::generate_keypair();
+        let signer_keypair = keys::generate_keypair();
+        let (view_private_key, view_public_key) = keys::generate_keypair_ed25519();
+        let (_, spend_public_key) = keys::generate_keypair_ed25519();
 
         // Create decoy ring members
-        let mut ring = vec![keypair.public_key.clone()];
+        let mut ring = vec![signer_keypair.public_key.clone()];
         for _ in 0..3 {
             ring.push(keys::generate_keypair().public_key);
         }
 
         let result = TransactionBuilder::new()
-            .with_signer(keypair.clone())
-            .add_input([1u8; 32], 0, keypair.private_key())
+            .with_signer(signer_keypair.clone())
+            .add_input([1u8; 32], 0, &view_private_key)
             .unwrap()
-            .add_output(&keypair.public_key[..32], &keypair.public_key[..32], 1000)
+            .add_output(&view_public_key, &spend_public_key, 1000)
             .unwrap()
             .with_ring_members(ring)
             .build([0u8; 32], [1u8; 32]);

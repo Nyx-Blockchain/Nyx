@@ -33,13 +33,15 @@
 //! let keypair = keys::generate_keypair();
 //!
 //! // Sign and verify
-//! let signature = keys::sign(data, &keypair.private_key).unwrap();
+//! let signature = keys::sign(data, keypair.private_key()).unwrap();
 //! assert!(keys::verify(data, &signature, &keypair.public_key).unwrap());
 //!
 //! // Generate stealth address
+//! let (_, view_pub) = keys::generate_keypair_ed25519();
+//! let (_, spend_pub) = keys::generate_keypair_ed25519();
 //! let (stealth_addr, _) = stealth::generate_stealth_address(
-//!     &keypair.public_key,
-//!     &keypair.public_key,
+//!     &view_pub,
+//!     &spend_pub,
 //!     &[1, 2, 3, 4]
 //! ).unwrap();
 //! ```

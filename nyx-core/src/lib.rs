@@ -28,7 +28,7 @@
 //! let tx = Transaction::new(
 //!     vec![/* inputs */],
 //!     vec![/* outputs */],
-//!     RingSignature { signature_data: vec![], ring_size: 16 },
+//!     RingSignature { ring_members: vec![], signature: vec![], key_image: [0u8; 32] },
 //!     vec![/* tx_key */],
 //!     [0u8; 32], // parent 1
 //!     [1u8; 32], // parent 2
