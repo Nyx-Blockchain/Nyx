@@ -19,9 +19,9 @@ use nyx_core::dag::DagProcessor;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::{RwLock, mpsc};
+use tokio::sync::{Mutex, RwLock, mpsc};
 use tokio::time::{interval, Duration};
-use tracing::{debug, info, warn, error};
+use tracing::{debug, info, warn};
 
 /// Node configuration
 #[derive(Clone, Debug)]
@@ -69,7 +69,7 @@ pub struct Node {
     sync: Arc<SyncManager>,
 
     /// DAG processor
-    dag: Arc<RwLock<DagProcessor>>,
+    _dag: Arc<RwLock<DagProcessor>>,
 
     /// Shutdown signal
     shutdown_tx: mpsc::Sender<()>,
@@ -98,7 +98,7 @@ impl Node {
             peer_manager,
             gossip,
             sync,
-            dag,
+            _dag: dag,
             shutdown_tx,
             shutdown_rx,
         })
@@ -145,11 +145,11 @@ impl Node {
     }
 
     /// Handles a new incoming connection
-    async fn handle_new_connection(&self, mut stream: TcpStream, addr: SocketAddr) {
+    async fn handle_new_connection(&self, stream: TcpStream, addr: SocketAddr) {
         let peer_manager = self.peer_manager.clone();
         let gossip = self.gossip.clone();
         let sync = self.sync.clone();
-        let node_id = self.config.node_id.clone();
+        let _node_id = self.config.node_id.clone();
 
         tokio::spawn(async move {
             // Check if we can accept more peers
@@ -160,6 +160,10 @@ impl Node {
                     return;
                 }
             }
+
+            // Split the stream
+            let (mut reader, writer) = stream.into_split();
+            let writer = Arc::new(Mutex::new(writer));
 
             // Create peer
             let peer_id = generate_peer_id(&addr);
@@ -176,22 +180,26 @@ impl Node {
             }
 
             // Register with gossip
-            gossip.register_peer(peer_id.clone(), stream.try_clone().unwrap()).await;
+            gossip
+                .register_peer(peer_id.clone(), writer.clone())
+                .await;
 
             info!("Connected to peer {:?} at {}", peer_id, addr);
 
             // Handle peer messages
             loop {
-                match peer.receive_message(&mut stream).await {
+                match peer.receive_message(&mut reader).await {
                     Ok(message) => {
                         if let Err(e) = handle_message(
                             message,
                             &mut peer,
-                            &mut stream,
+                            writer.clone(),
                             &gossip,
                             &sync,
                             &peer_manager,
-                        ).await {
+                        )
+                        .await
+                        {
                             warn!("Error handling message from {:?}: {}", peer_id, e);
                         }
                     }
@@ -229,7 +237,10 @@ impl Node {
         let peer_id = generate_peer_id(&addr);
         let mut peer = Peer::new(peer_id.clone(), addr);
 
-        let mut stream = peer.connect().await?;
+        let stream = peer.connect().await?;
+        let (_reader, writer) = stream.into_split();
+        let writer = Arc::new(Mutex::new(writer));
+
 
         // Add to peer manager
         {
@@ -238,7 +249,7 @@ impl Node {
         }
 
         // Register with gossip
-        self.gossip.register_peer(peer_id, stream.try_clone().unwrap()).await;
+        self.gossip.register_peer(peer_id, writer).await;
 
         Ok(())
     }
@@ -246,7 +257,7 @@ impl Node {
     /// Spawns heartbeat task to maintain peer connections
     fn spawn_heartbeat_task(&self) -> tokio::task::JoinHandle<()> {
         let peer_manager = self.peer_manager.clone();
-        let gossip = self.gossip.clone();
+        let _gossip = self.gossip.clone();
 
         tokio::spawn(async move {
             let mut timer = interval(Duration::from_secs(HEARTBEAT_INTERVAL_SECS));
@@ -256,7 +267,7 @@ impl Node {
 
                 debug!("Running heartbeat check");
 
-                let mut manager = peer_manager.write().await;
+                let manager = peer_manager.write().await;
                 let connected = manager.connected_peers();
 
                 debug!("Connected peers: {}", connected.len());
@@ -269,7 +280,7 @@ impl Node {
     /// Spawns sync task to periodically sync with peers
     fn spawn_sync_task(&self) -> tokio::task::JoinHandle<()> {
         let sync = self.sync.clone();
-        let peer_manager = self.peer_manager.clone();
+        let _peer_manager = self.peer_manager.clone();
 
         tokio::spawn(async move {
             let mut timer = interval(Duration::from_secs(SYNC_INTERVAL_SECS));
@@ -291,7 +302,7 @@ impl Node {
 
     /// Broadcasts a transaction to the network
     pub async fn broadcast_transaction(&self, tx: nyx_core::Transaction) -> Result<()> {
-        let mut manager = self.peer_manager.write().await;
+        let manager = self.peer_manager.write().await;
         let mut peers: Vec<Peer> = manager.connected_peers()
             .into_iter()
             .cloned()
@@ -334,11 +345,15 @@ pub struct NodeStats {
     pub sync_state: crate::sync::SyncState,
 }
 
+use tokio::net::tcp::OwnedWriteHalf;
+
+// ... (previous code)
+
 /// Handles an incoming message
 async fn handle_message(
     message: Message,
     peer: &mut Peer,
-    stream: &mut TcpStream,
+    writer: Arc<Mutex<OwnedWriteHalf>>,
     gossip: &Arc<GossipEngine>,
     sync: &Arc<SyncManager>,
     peer_manager: &Arc<RwLock<PeerManager>>,
@@ -351,8 +366,9 @@ async fn handle_message(
             info!("Received transaction: {:?}", hex::encode(tx.id()));
 
             // Gossip to other peers
-            let mut manager = peer_manager.write().await;
-            let mut peers: Vec<Peer> = manager.connected_peers()
+            let manager = peer_manager.write().await;
+            let mut peers: Vec<Peer> = manager
+                .connected_peers()
                 .into_iter()
                 .filter(|p| p.id != peer.id) // Don't send back to sender
                 .cloned()
@@ -366,7 +382,8 @@ async fn handle_message(
         MessageType::Ping => {
             // Respond with pong
             let pong = Message::new(MessageType::Pong);
-            peer.send_message(stream, &pong).await?;
+            let mut stream = writer.lock().await;
+            peer.send_message(&mut stream, &pong).await?;
         }
 
         MessageType::Pong => {
@@ -376,7 +393,9 @@ async fn handle_message(
 
         MessageType::SyncRequest { from_height } => {
             // Handle sync request
-            sync.handle_sync_request(from_height, peer, stream).await?;
+            let mut stream = writer.lock().await;
+            sync.handle_sync_request(from_height, peer, &mut stream)
+                .await?;
         }
 
         MessageType::SyncResponse { transactions } => {

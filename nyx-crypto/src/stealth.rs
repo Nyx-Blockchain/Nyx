@@ -7,7 +7,6 @@
 
 use crate::errors::{CryptoError, Result};
 use crate::hash::blake3_hash;
-use crate::STEALTH_ADDRESS_SIZE;
 use curve25519_dalek::{
     edwards::CompressedEdwardsY,
     scalar::Scalar,

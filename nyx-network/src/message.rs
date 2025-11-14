@@ -5,7 +5,7 @@
 //! Defines all message types used in the Nyx P2P protocol including
 //! transaction broadcasts, sync requests, and peer discovery.
 
-use nyx_core::{Transaction, Hash};
+use nyx_core::Transaction;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 
@@ -141,24 +141,26 @@ fn current_timestamp() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nyx_core::transaction::{TxInput, TxOutput, RingSignature};
+    use nyx_core::{RingSignature, transaction::{TxInput, TxOutput}};
 
     fn create_test_tx() -> Transaction {
         Transaction::new(
             vec![TxInput {
                 prev_tx: [1u8; 32],
                 index: 0,
-                key_image: vec![],
+                key_image: [0u8; 32],
                 ring_indices: vec![],
             }],
             vec![TxOutput {
                 stealth_address: vec![],
                 amount_commitment: vec![],
                 range_proof: vec![],
+                ephemeral_pubkey: vec![],
             }],
             RingSignature {
-                signature_data: vec![],
-                ring_size: 16,
+                ring_members: vec![],
+                signature: vec![],
+                key_image: [0u8; 32],
             },
             vec![],
             [0u8; 32],

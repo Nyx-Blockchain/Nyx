@@ -7,14 +7,14 @@
 //! - Messages are deduplicated using a hash cache
 //! - Failed deliveries are retried with exponential backoff
 
-use crate::errors::{NetworkError, Result};
+use crate::errors::Result;
 use crate::message::{Message, MessageId, MessageType};
 use crate::peer::{Peer, PeerId};
 use crate::MAX_SEEN_MESSAGES;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use tokio::sync::RwLock;
-use tokio::net::TcpStream;
+use tokio::net::tcp::OwnedWriteHalf;
+use tokio::sync::{Mutex, RwLock};
 use tracing::{debug, warn};
 
 /// Gossip engine for message propagation
@@ -23,7 +23,7 @@ pub struct GossipEngine {
     seen_messages: Arc<RwLock<HashSet<MessageId>>>,
 
     /// Active peer connections
-    peer_streams: Arc<RwLock<HashMap<PeerId, TcpStream>>>,
+    peer_streams: Arc<RwLock<HashMap<PeerId, Arc<Mutex<OwnedWriteHalf>>>>>,
 
     /// Pending messages to broadcast
     pending: Arc<RwLock<Vec<Message>>>,
@@ -76,15 +76,15 @@ impl GossipEngine {
         let streams = self.peer_streams.read().await;
 
         for peer in peers.iter_mut().filter(|p| p.is_connected()) {
-            if let Some(stream) = streams.get(&peer.id) {
-                // Clone stream handle for this peer
-                let mut stream_clone = stream.try_clone()
-                    .map_err(|e| NetworkError::IoError(e))?;
-
-                match peer.send_message(&mut stream_clone, &message).await {
+            if let Some(stream_mutex) = streams.get(&peer.id) {
+                let mut stream = stream_mutex.lock().await;
+                match peer.send_message(&mut stream, &message).await {
                     Ok(()) => {
-                        debug!("Broadcast message {} to peer {:?}",
-                               hex::encode(&message.id), peer.id);
+                        debug!(
+                            "Broadcast message {} to peer {:?}",
+                            hex::encode(&message.id),
+                            peer.id
+                        );
                         success_count += 1;
                     }
                     Err(e) => {
@@ -113,7 +113,11 @@ impl GossipEngine {
     }
 
     /// Registers a peer stream for gossip
-    pub async fn register_peer(&self, peer_id: PeerId, stream: TcpStream) {
+    pub async fn register_peer(
+        &self,
+        peer_id: PeerId,
+        stream: Arc<Mutex<OwnedWriteHalf>>,
+    ) {
         let mut streams = self.peer_streams.write().await;
         streams.insert(peer_id, stream);
     }
