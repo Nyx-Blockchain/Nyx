@@ -212,6 +212,7 @@ fn hash_to_scalar(data: &[u8]) -> [u8; 32] {
 mod tests {
     use super::*;
     use crate::keys::generate_keypair_ed25519;
+    use crate::STEALTH_ADDRESS_SIZE;
 
     #[test]
     fn test_generate_stealth_address() {
