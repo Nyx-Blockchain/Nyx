@@ -42,6 +42,7 @@
 #![warn(clippy::all)]
 
 pub mod types;
+///! Transaction structure and validation logic.
 pub mod transaction;
 pub mod transaction_builder;
 pub mod dag;

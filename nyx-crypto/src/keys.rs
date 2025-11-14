@@ -114,6 +114,10 @@ fn generate_keypair_with_rng<R: Rng>(rng: &mut R) -> KeyPair {
     }
 }
 
+/// Generates an Ed25519 keypair for standard cryptographic operations
+///
+/// # Returns
+/// A tuple containing the private key and public key as byte vectors.
 pub fn generate_keypair_ed25519() -> (Vec<u8>, Vec<u8>) {
     let mut rng = rand::thread_rng();
     let private: [u8; 32] = rng.gen();

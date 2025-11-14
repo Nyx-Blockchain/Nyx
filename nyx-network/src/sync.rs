@@ -7,14 +7,14 @@
 //! - Responds to sync requests with transaction batches
 //! - Maintains sync state and progress tracking
 
-use crate::errors::{NetworkError, Result};
+use crate::errors::Result;
 use crate::message::{Message, MessageType};
-use crate::peer::{Peer, PeerId};
+use crate::peer::Peer;
 use crate::MAX_SYNC_BATCH_SIZE;
-use nyx_core::{Transaction, Hash};
-use nyx_core::storage::MemoryStorage;
+use nyx_core::Transaction;
 use nyx_core::dag::DagProcessor;
 use std::sync::Arc;
+use tokio::net::tcp::OwnedWriteHalf;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
@@ -62,7 +62,7 @@ impl SyncManager {
         &self,
         from_height: u64,
         peer: &mut Peer,
-        stream: &mut tokio::net::TcpStream,
+        stream: &mut OwnedWriteHalf,
     ) -> Result<()> {
         debug!("Handling sync request from peer {:?} from height {}", peer.id, from_height);
 
@@ -92,7 +92,7 @@ impl SyncManager {
         transactions: Vec<Transaction>,
     ) -> Result<()> {
         let mut state = self.sync_state.write().await;
-        let mut dag = self.dag.write().await;
+        let dag = self.dag.write().await;
 
         debug!("Processing sync response with {} transactions", transactions.len());
 
@@ -119,7 +119,7 @@ impl SyncManager {
         &self,
         from_height: u64,
         peer: &mut Peer,
-        stream: &mut tokio::net::TcpStream,
+        stream: &mut OwnedWriteHalf,
     ) -> Result<()> {
         let mut state = self.sync_state.write().await;
         state.is_syncing = true;
@@ -136,8 +136,8 @@ impl SyncManager {
     /// Gets transactions from a specific height
     async fn get_transactions_from_height(
         &self,
-        dag: &DagProcessor,
-        from_height: u64,
+        _dag: &DagProcessor,
+        _from_height: u64,
     ) -> Result<Vec<Transaction>> {
         // In a real implementation, this would query the DAG for transactions
         // For now, we return an empty vec as the DAG doesn't have height tracking yet

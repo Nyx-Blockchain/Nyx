@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
@@ -86,7 +87,7 @@ impl Peer {
     /// Sends a message to this peer
     pub async fn send_message(
         &mut self,
-        stream: &mut TcpStream,
+        stream: &mut OwnedWriteHalf,
         message: &Message,
     ) -> Result<()> {
         // Serialize message
@@ -112,7 +113,7 @@ impl Peer {
     /// Receives a message from this peer
     pub async fn receive_message(
         &mut self,
-        stream: &mut TcpStream,
+        stream: &mut OwnedReadHalf,
     ) -> Result<Message> {
         // Read length prefix
         let mut len_bytes = [0u8; 4];
@@ -148,15 +149,19 @@ impl Peer {
     }
 
     /// Measures latency by timing a ping
-    pub async fn measure_latency(&mut self, stream: &mut TcpStream) -> Result<u64> {
+    pub async fn measure_latency(
+        &mut self,
+        writer: &mut OwnedWriteHalf,
+        reader: &mut OwnedReadHalf,
+    ) -> Result<u64> {
         let start = Instant::now();
 
         // Send ping
         let ping = Message::new(crate::message::MessageType::Ping);
-        self.send_message(stream, &ping).await?;
+        self.send_message(writer, &ping).await?;
 
         // Wait for pong
-        let response = self.receive_message(stream).await?;
+        let response = self.receive_message(reader).await?;
 
         if !matches!(response.message_type, crate::message::MessageType::Pong) {
             return Err(NetworkError::InvalidMessage("Expected Pong".to_string()));
