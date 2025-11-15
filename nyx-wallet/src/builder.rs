@@ -4,7 +4,7 @@
 
 use crate::account::Account;
 use crate::errors::{WalletError, Result};
-use nyx_core::transaction::{Transaction, TxInput, TxOutput, RingSignature};
+use nyx_core::transaction::{Transaction, TxInput, TxOutput};
 use nyx_core::Hash;
 use nyx_crypto::{ring, stealth};
 
@@ -21,7 +21,7 @@ pub struct Utxo {
     pub amount: u64,
 
     /// Key image (for preventing double-spends)
-    pub key_image: Vec<u8>,
+    pub key_image: [u8; 32],
 }
 
 /// Transaction builder
@@ -111,7 +111,7 @@ impl TransactionBuilder {
             let input = TxInput {
                 prev_tx: utxo.tx_hash,
                 index: utxo.index,
-                key_image: utxo.key_image.clone(),
+                key_image: utxo.key_image,
                 ring_indices: vec![0, 1, 2, 3], // Mock indices
             };
             tx_inputs.push(input);
@@ -122,7 +122,7 @@ impl TransactionBuilder {
         for (view_pub, spend_pub, amount) in &self.outputs {
             // Generate stealth address
             let random = stealth::generate_random_ephemeral();
-            let (stealth_address, _ephemeral_pubkey) = stealth::generate_stealth_address(
+            let (stealth_address, ephemeral_pubkey) = stealth::generate_stealth_address(
                 view_pub,
                 spend_pub,
                 &random,
@@ -138,6 +138,7 @@ impl TransactionBuilder {
                 stealth_address,
                 amount_commitment,
                 range_proof,
+                ephemeral_pubkey,
             };
             tx_outputs.push(output);
         }
@@ -194,7 +195,7 @@ mod tests {
             tx_hash: [1u8; 32],
             index: 0,
             amount,
-            key_image: vec![2u8; 32],
+            key_image: [2u8; 32],
         }
     }
 
@@ -231,8 +232,8 @@ mod tests {
             .sender(account.clone())
             .add_input(utxo)
             .add_output(
-                account.view_public_key().to_vec(),
-                account.spend_public_key().to_vec(),
+                account.address.view_public.clone(),
+                account.address.spend_public.clone(),
                 900
             )
             .build([0u8; 32], [1u8; 32])
@@ -303,8 +304,8 @@ mod tests {
             .sender(account.clone())
             .add_input(utxo)
             .add_output(
-                account.view_public_key().to_vec(),
-                account.spend_public_key().to_vec(),
+                account.address.view_public.clone(),
+                account.address.spend_public.clone(),
                 900
             )
             .with_ring_members(ring_members)
@@ -326,13 +327,13 @@ mod tests {
             .add_input(utxo1)
             .add_input(utxo2)
             .add_output(
-                account.view_public_key().to_vec(),
-                account.spend_public_key().to_vec(),
+                account.address.view_public.clone(),
+                account.address.spend_public.clone(),
                 400
             )
             .add_output(
-                account.view_public_key().to_vec(),
-                account.spend_public_key().to_vec(),
+                account.address.view_public.clone(),
+                account.address.spend_public.clone(),
                 500
             )
             .build([0u8; 32], [1u8; 32])

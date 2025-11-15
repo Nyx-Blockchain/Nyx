@@ -248,6 +248,15 @@ pub fn derive_public_key(private_key: &[u8]) -> Result<Vec<u8>> {
     Ok(public_key)
 }
 
+/// Generates an Ed25519 keypair and returns it as a KeyPair struct
+pub fn generate_ed25519_keypair_as_struct() -> KeyPair {
+    let (private, public) = generate_keypair_ed25519();
+    KeyPair {
+        public_key: public,
+        private_key_inner: PrivateKey { data: private },
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

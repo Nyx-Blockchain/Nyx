@@ -193,7 +193,7 @@ impl Wallet {
             tx_hash: [0u8; 32],
             index: 0,
             amount: 1000,
-            key_image: vec![1u8; 32],
+            key_image: [1u8; 32],
         };
 
         self.add_utxo(&account.name, mock_utxo)?;
@@ -483,7 +483,7 @@ mod tests {
             tx_hash: [1u8; 32],
             index: 0,
             amount: 1000,
-            key_image: vec![2u8; 32],
+            key_image: [2u8; 32],
         };
 
         wallet.add_utxo(&account.name, utxo).unwrap();
@@ -500,14 +500,14 @@ mod tests {
             tx_hash: [1u8; 32],
             index: 0,
             amount: 500,
-            key_image: vec![2u8; 32],
+            key_image: [2u8; 32],
         };
 
         let utxo2 = Utxo {
             tx_hash: [2u8; 32],
             index: 0,
             amount: 300,
-            key_image: vec![3u8; 32],
+            key_image: [3u8; 32],
         };
 
         wallet.add_utxo(&account.name, utxo1).unwrap();
@@ -536,7 +536,7 @@ mod tests {
             tx_hash: [1u8; 32],
             index: 0,
             amount: 2000,
-            key_image: vec![2u8; 32],
+            key_image: [2u8; 32],
         };
         wallet.add_utxo(&account.name, utxo).unwrap();
 
@@ -573,7 +573,7 @@ mod tests {
             tx_hash: [1u8; 32],
             index: 0,
             amount: 2000,
-            key_image: vec![2u8; 32],
+            key_image: [2u8; 32],
         };
         wallet.add_utxo(&account.name, utxo).unwrap();
 
@@ -587,8 +587,8 @@ mod tests {
     fn test_get_stats() {
         let mut wallet = Wallet::new();
 
-        wallet.add_account(Account::generate()).unwrap();
-        wallet.add_account(Account::generate()).unwrap();
+        wallet.add_account(Account::generate_with_name("acc1".to_string())).unwrap();
+        wallet.add_account(Account::generate_with_name("acc2".to_string())).unwrap();
 
         let stats = wallet.get_stats();
 
@@ -605,7 +605,7 @@ mod tests {
             tx_hash: [1u8; 32],
             index: 0,
             amount: 1000,
-            key_image: vec![2u8; 32],
+            key_image: [2u8; 32],
         };
         wallet.add_utxo(&account.name, utxo).unwrap();
 
@@ -623,7 +623,7 @@ mod tests {
             tx_hash: [1u8; 32],
             index: 0,
             amount: 1000,
-            key_image: vec![2u8; 32],
+            key_image: [2u8; 32],
         };
         wallet.add_utxo(&account.name, utxo).unwrap();
 

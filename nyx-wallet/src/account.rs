@@ -61,16 +61,16 @@ impl Account {
     /// assert!(!account.name.is_empty());
     /// ```
     pub fn generate() -> Self {
-        let view_keypair = nyx_crypto::keys::generate_keypair();
-        let spend_keypair = nyx_crypto::keys::generate_keypair();
+        let view_keypair = nyx_crypto::keys::generate_ed25519_keypair_as_struct();
+        let spend_keypair = nyx_crypto::keys::generate_ed25519_keypair_as_struct();
 
         Self::from_keypairs("default".to_string(), view_keypair, spend_keypair)
     }
 
     /// Generates an account with a specific name
     pub fn generate_with_name(name: String) -> Self {
-        let view_keypair = nyx_crypto::keys::generate_keypair();
-        let spend_keypair = nyx_crypto::keys::generate_keypair();
+        let view_keypair = nyx_crypto::keys::generate_ed25519_keypair_as_struct();
+        let spend_keypair = nyx_crypto::keys::generate_ed25519_keypair_as_struct();
 
         Self::from_keypairs(name, view_keypair, spend_keypair)
     }
@@ -78,8 +78,8 @@ impl Account {
     /// Creates an account from existing keypairs
     pub fn from_keypairs(name: String, view_keypair: KeyPair, spend_keypair: KeyPair) -> Self {
         let address = Address {
-            view_public: view_keypair.public_key[..32].to_vec(),
-            spend_public: spend_keypair.public_key[..32].to_vec(),
+            view_public: view_keypair.public_key.clone(),
+            spend_public: spend_keypair.public_key.clone(),
         };
 
         Self {
