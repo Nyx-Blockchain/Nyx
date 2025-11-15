@@ -84,24 +84,27 @@ impl Mempool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nyx_core::transaction::{TxInput, TxOutput, RingSignature};
+    use nyx_core::transaction::{TxInput, TxOutput};
+    use nyx_crypto::ring::RingSignature;
 
     fn create_test_tx(nonce: u8) -> Transaction {
         Transaction::new(
             vec![TxInput {
                 prev_tx: [nonce; 32],
                 index: 0,
-                key_image: vec![nonce],
+                key_image: [nonce; 32],
                 ring_indices: vec![],
             }],
             vec![TxOutput {
                 stealth_address: vec![nonce],
                 amount_commitment: vec![],
                 range_proof: vec![],
+                ephemeral_pubkey: vec![],
             }],
             RingSignature {
-                signature_data: vec![nonce],
-                ring_size: 16,
+                ring_members: vec![],
+                signature: vec![nonce],
+                key_image: [nonce; 32],
             },
             vec![nonce],
             [0u8; 32],

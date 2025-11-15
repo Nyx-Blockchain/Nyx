@@ -58,7 +58,7 @@ impl NyxNode {
         let wallet = if config.wallet.enabled {
             let mut wallet = Wallet::with_default_account();
             // Mock: add some balance for testing
-            wallet.scan_outputs().await.ok();
+            wallet.scan_outputs().ok();
             Some(wallet)
         } else {
             None
@@ -94,7 +94,8 @@ impl NyxNode {
         }
 
         // Start network node
-        let network = node_arc.read().await.network.clone();
+        // TODO: Use this handle to manage the network task
+        let _network = node_arc.read().await.network.clone();
         tokio::spawn(async move {
             // Note: This will block, so run in separate task
             // In production, we'd handle this better
