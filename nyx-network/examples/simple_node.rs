@@ -1,7 +1,6 @@
 //! Simple node example - starts a single network node
 
 use nyx_network::{Node, NodeConfig};
-use std::net::SocketAddr;
 use tokio::time::{sleep, Duration};
 
 #[tokio::main]

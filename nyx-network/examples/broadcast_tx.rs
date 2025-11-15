@@ -1,7 +1,10 @@
 //! Broadcasting transactions example
 
 use nyx_network::{Node, NodeConfig};
-use nyx_core::transaction::{Transaction, TxInput, TxOutput, RingSignature};
+use nyx_core::{
+    transaction::{Transaction, TxInput, TxOutput},
+    RingSignature,
+};
 use tokio::time::{sleep, Duration};
 
 fn create_test_transaction(nonce: u8) -> Transaction {
@@ -9,19 +12,21 @@ fn create_test_transaction(nonce: u8) -> Transaction {
         vec![TxInput {
             prev_tx: [nonce; 32],
             index: 0,
-            key_image: vec![nonce],
+            key_image: [nonce; 32],
             ring_indices: vec![0, 1, 2, 3],
         }],
         vec![TxOutput {
-            stealth_address: vec![nonce, nonce, nonce],
-            amount_commitment: vec![],
-            range_proof: vec![],
+            stealth_address: vec![nonce; 32],
+            amount_commitment: vec![nonce; 32],
+            range_proof: vec![nonce; 64],
+            ephemeral_pubkey: vec![nonce; 32],
         }],
         RingSignature {
-            signature_data: vec![nonce],
-            ring_size: 16,
+            ring_members: vec![vec![nonce; 32]; 4],
+            signature: vec![nonce; 64],
+            key_image: [nonce; 32],
         },
-        vec![nonce],
+        vec![nonce; 32],
         [0u8; 32],
         [1u8; 32],
     )
