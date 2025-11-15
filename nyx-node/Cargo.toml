@@ -1,0 +1,42 @@
+[package]
+name = "nyx-node"
+version = "0.1.0"
+edition = "2021"
+authors = ["Nyx Core Development Team"]
+description = "Complete blockchain node orchestration for Nyx"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nyx-blockchain/nyx-node"
+
+[dependencies]
+# Internal dependencies
+nyx-core = { path = "../nyx-core" }
+nyx-crypto = { path = "../nyx-crypto" }
+nyx-network = { path = "../nyx-network" }
+nyx-wallet = { path = "../nyx-wallet" }
+
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+axum = "0.7"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Utilities
+hex = "0.4"
+chrono = "0.4"
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[[bin]]
+name = "nyx-node"
+path = "src/main.rs"

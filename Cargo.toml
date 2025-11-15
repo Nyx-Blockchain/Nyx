@@ -6,6 +6,7 @@ members = [
     "nyx-vm",
     "nyx-network",
     "nyx-wallet",
+    "nyx-node"
 ]
 resolver = "2"
 
