@@ -55,6 +55,7 @@ impl Default for NodeConfig {
 }
 
 /// Network node
+#[derive(Clone)]
 pub struct Node {
     /// Node configuration
     config: NodeConfig,
@@ -73,7 +74,7 @@ pub struct Node {
 
     /// Shutdown signal
     shutdown_tx: mpsc::Sender<()>,
-    shutdown_rx: mpsc::Receiver<()>,
+    shutdown_rx: Arc<Mutex<mpsc::Receiver<()>>>,
 }
 
 impl Node {
@@ -100,12 +101,12 @@ impl Node {
             sync,
             _dag: dag,
             shutdown_tx,
-            shutdown_rx,
+            shutdown_rx: Arc::new(Mutex::new(shutdown_rx)),
         })
     }
 
     /// Runs the network node
-    pub async fn run(mut self) -> Result<()> {
+    pub async fn run(self) -> Result<()> {
         info!("Starting node on {}", self.config.listen_addr);
 
         // Start listening for connections
@@ -118,6 +119,7 @@ impl Node {
         // Spawn background tasks
         let heartbeat_handle = self.spawn_heartbeat_task();
         let sync_handle = self.spawn_sync_task();
+        let mut shutdown_rx = self.shutdown_rx.lock().await;
 
         // Main accept loop
         loop {
@@ -129,7 +131,7 @@ impl Node {
                 }
 
                 // Shutdown signal
-                _ = self.shutdown_rx.recv() => {
+                _ = shutdown_rx.recv() => {
                     info!("Received shutdown signal");
                     break;
                 }

@@ -1,28 +1,32 @@
 //! Full network example - 5 nodes with transaction broadcasting
 
 use nyx_network::{Node, NodeConfig};
-use nyx_core::transaction::{Transaction, TxInput, TxOutput, RingSignature};
+use nyx_core::{
+    transaction::{Transaction, TxInput, TxOutput},
+    RingSignature,
+};
 use tokio::time::{sleep, Duration};
-use std::sync::Arc;
 
 fn create_transaction(id: u8) -> Transaction {
     Transaction::new(
         vec![TxInput {
             prev_tx: [id; 32],
             index: 0,
-            key_image: vec![id],
-            ring_indices: vec![],
+            key_image: [id; 32],
+            ring_indices: vec![0, 1, 2, 3],
         }],
         vec![TxOutput {
-            stealth_address: vec![id],
-            amount_commitment: vec![],
-            range_proof: vec![],
+            stealth_address: vec![id; 32],
+            amount_commitment: vec![id; 32],
+            range_proof: vec![id; 64],
+            ephemeral_pubkey: vec![id; 32],
         }],
         RingSignature {
-            signature_data: vec![id],
-            ring_size: 16,
+            ring_members: vec![vec![id; 32]; 4],
+            signature: vec![id; 64],
+            key_image: [id; 32],
         },
-        vec![id],
+        vec![id; 32],
         [0u8; 32],
         [1u8; 32],
     )
@@ -33,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
     println!("🌐 Full Network Example - 5 Nodes\n");
-    println!("=" .repeat(50));
+    println!("{}", "=".repeat(50));
 
     let mut nodes = Vec::new();
     let mut bootstrap_peers = Vec::new();
@@ -75,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Show network status
     println!("\n📊 Network Status:");
-    println!("=" .repeat(50));
+    println!("{}", "=".repeat(50));
     for (i, node) in nodes.iter().enumerate() {
         let stats = node.stats().await;
         println!("\nNode {}:", i + 1);
@@ -86,7 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Broadcast transactions from different nodes
     println!("\n\n📡 Broadcasting Transactions:");
-    println!("=" .repeat(50));
+    println!("{}", "=".repeat(50));
 
     // Node 0 broadcasts 3 transactions
     println!("\n🔵 Node 1 broadcasting...");
@@ -116,7 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Final statistics
     println!("\n\n📈 Final Network Statistics:");
-    println!("=" .repeat(50));
+    println!("{}", "=".repeat(50));
 
     let mut total_messages = 0;
     let mut total_peers = 0;
