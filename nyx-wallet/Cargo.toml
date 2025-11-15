@@ -1,6 +1,40 @@
 [package]
 name = "nyx-wallet"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+authors = ["Nyx Core Development Team"]
+description = "Wallet implementation for the Nyx blockchain - key management and transaction building"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nyx-blockchain/nyx-wallet"
+keywords = ["blockchain", "wallet", "cryptocurrency", "privacy"]
+categories = ["cryptography"]
 
 [dependencies]
+# Internal dependencies
+nyx-core = { path = "../nyx-core" }
+nyx-crypto = { path = "../nyx-crypto" }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bincode = "1.3"
+
+# Error handling
+thiserror = "1.0"
+
+# Utilities
+hex = "0.4"
+rand = "0.8"
+
+# Encryption
+aes-gcm = "0.10"
+zeroize = { version = "1.7", features = ["derive"] }
+
+# Optional: for file operations
+directories = "5.0"
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[features]
+default = []
